@@ -3,8 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 sys.path.append("/nfs/work/2022/tp449528/lib")
-import numba
+from numba import jit
 
+@jit(nopython = True)
 def evlove(n_val, curr):
     if n_val == 3:
         return 1
@@ -12,23 +13,36 @@ def evlove(n_val, curr):
         return 1
     else:
         return 0
-
+print("xd")
 #TASK 2
 #init
 life_shape = (256,512)
+L = life_shape[1]
 life = np.random.randint(0,2,life_shape)
 T_max = 1000
+
+print("xdxd")
 #%%
-for t in range(T_max):
-    # plt.imshow(life)
-    right_roll = np.roll(life,1,1)
-    left_roll = np.roll(life,-1,1)
+def save(time, life, life_shape):
+    fig = life.reshape(life_shape)
+    plt.imshow(fig, interpolation = 'none')
+    plt.savefig(f"./zad1/imgs/life_{time}.png")
 
-    neighbour_val = np.roll(life,1,0) + np.roll(life,-1,0) \
-        + right_roll + left_roll \
-        + np.roll(right_roll,1,0) + np.roll(right_roll,-1,0)\
-        + np.roll(left_roll,1,0) + np.roll(left_roll,-1,0)
+@jit(nopython = True)
+def calc_neighbour(life,L):
+    neighbour_val = np.roll(life,1) + np.roll(life,-1) \
+            + np.roll(life,L) + np.roll(life,-L) \
+            + np.roll(life,L+1) + np.roll(life,L-1)\
+            + np.roll(life,-L+1) + np.roll(life,-L-1)
+    return neighbour_val
 
-    life = np.array(list(map(evlove, neighbour_val.ravel(), life.ravel()))).reshape(life_shape)
-    plt.imshow(life, interpolation = 'none')
-    plt.savefig(f"life_{t}.png")
+
+def run(time, life,L, life_shape):
+    for t in range(time):
+        n_vals = calc_neighbour(life,L)
+
+        life = np.array(list(map(evlove, n_vals, life)))
+        if t%100 == 0:
+            save(t,life, life_shape)
+
+run(T_max, life.ravel(), L, life_shape)
