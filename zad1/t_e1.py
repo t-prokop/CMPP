@@ -1,6 +1,5 @@
 # %%
 import imageio
-from itertools import repeat
 from numba import jit
 import numpy as np
 import matplotlib.pyplot as plt
