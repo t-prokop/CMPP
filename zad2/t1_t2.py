@@ -48,7 +48,7 @@ def calculate_play_values(world, b):
     return new_world_vals
 
 
-def play(world, world_rolled, not_world, not_world_rolled, b):
+def play(world, world_rolled, b):
     played = 10*world + world_rolled
     played_vals = b*(played == 10).astype(int) + (played == 0).astype(int)
     return played_vals
