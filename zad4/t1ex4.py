@@ -1,4 +1,5 @@
 # %%
+import imageio
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -11,9 +12,10 @@ from tqdm import tqdm
 
 
 def calc_f_eq(rho, u, Nx, Ny):
-    vel_vects = [[0,0],[1,0],[0,1],[-1,0],[0,-1],[1,1],[-1,1],[-1,-1],[1,-1]]
+    vel_vects = [[0, 0], [1, 0], [0, 1], [-1, 0],
+                 [0, -1], [1, 1], [-1, 1], [-1, -1], [1, -1]]
     W = [4/9, 1/9, 1/9, 1/9, 1/9, 1/36, 1/36, 1/36, 1/36]
-    
+
     ret_f = np.zeros((9, Nx, Ny))
     norm_u = np.einsum('ijk,ijk->ij', u, u)
 
@@ -26,7 +28,8 @@ def calc_f_eq(rho, u, Nx, Ny):
 
 def calc_f_x0(rho, ux0, Ny):  # calc step 1 f_i^eq
     W = [4/9, 1/9, 1/9, 1/9, 1/9, 1/36, 1/36, 1/36, 1/36]
-    vel_vects = [[0,0],[1,0],[0,1],[-1,0],[0,-1],[1,1],[-1,1],[-1,-1],[1,-1]]
+    vel_vects = [[0, 0], [1, 0], [0, 1], [-1, 0],
+                 [0, -1], [1, 1], [-1, 1], [-1, -1], [1, -1]]
 
     ret_f = np.zeros((9, Ny))
     norm_ux0 = np.einsum('ij,ij->i', ux0, ux0)
@@ -62,7 +65,7 @@ def recalc_density(f, Nx, Ny):  # step 3
          [1, 1], [-1, 1], [-1, -1], [1, -1]]
     rho = np.sum(f, axis=0)
     inv_rho = 1/rho
-    u = np.einsum('ijk,il -> jkl', f, e)[:,:,:]*inv_rho[:,:,np.newaxis]
+    u = np.einsum('ijk,il -> jkl', f, e)[:, :, :]*inv_rho[:, :, np.newaxis]
     f_eq = calc_f_eq(rho, u, Nx, Ny)
     return f_eq
 
@@ -96,12 +99,12 @@ def calc_norm_u_from_f(f):
          [1, 1], [-1, 1], [-1, -1], [1, -1]]
     rho = np.sum(f, axis=0)
     inv_rho = 1/rho
-    u = np.einsum('ijk,il -> jkl', f, e)[:,:,:]*inv_rho[:,:,np.newaxis]
+    u = np.einsum('ijk,il -> jkl', f, e)[:, :, :]*inv_rho[:, :, np.newaxis]
     norm_u = np.einsum('ijk,ijk->ij', u, u)
     return norm_u
 
 
-def plot(f, t, fnames, re, save=False, show=True):
+def plot(f, t, fnames, re, save=False, show=False):
     plt.imshow(calc_norm_u_from_f(f), cmap='hot')
     plt.title(f't:{t}, Re:{re}')
     if save:
@@ -127,11 +130,11 @@ def run(Nx, Ny, tau, obstacle, u0, rho0, T_max, Re, fnames=[], save=False):
         f = streaming(f, Nx, Ny)
 
         if i % 100 == 0:
-            plot(f, i, fnames, save, Re)
+            plot(f, i, fnames, Re, save)
 
 
 # %%
-#TODO Re = 110
+# TODO Re = 110
 Nx = 520
 Ny = 180
 
@@ -141,10 +144,11 @@ wedge = np.fromfunction(lambda i, j: np.abs(
 bottom_boundary = np.fromfunction(lambda i, j: j == 0, (Nx, Ny))
 top_boundary = np.fromfunction(lambda i, j: j == Ny-1, (Nx, Ny))
 
-full_obstacle = np.logical_or(np.logical_or(wedge, bottom_boundary), top_boundary)
+full_obstacle = np.logical_or(np.logical_or(
+    wedge, bottom_boundary), top_boundary)
 
 u_in = 0.04
-Re = 220
+Re = 440
 visc = u_in * Ny / (2*Re)
 tau = 3*visc + 0.5
 
@@ -158,3 +162,8 @@ rho0 = np.full((Nx, Ny), 1)
 filenames = []
 run(Nx, Ny, tau, full_obstacle, u0, rho0, 20000, Re, filenames, save=True)
 # %%
+with imageio.get_writer('./re220.gif', mode='I', duration=40) as writer:
+    for frame in filenames:
+        image = imageio.imread(frame)
+        writer.append_data(image)
+writer.close()
