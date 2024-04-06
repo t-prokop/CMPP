@@ -114,8 +114,6 @@ def plot(f, t, fnames, re, save=False, show=False):
         plt.show()
 
 # %%
-
-
 def run(Nx, Ny, tau, obstacle, u0, rho0, T_max, Re, fnames=[], save=False):
     # initialize with f_eq for given u0, rho0
     f = calc_f_eq(rho0, u0, Nx, Ny)
@@ -131,25 +129,26 @@ def run(Nx, Ny, tau, obstacle, u0, rho0, T_max, Re, fnames=[], save=False):
 
         if i % 100 == 0:
             plot(f, i, fnames, Re, save)
-
-
+###COPY END
+#%%
 # %%
 # TODO Re = 110
 Nx = 520
 Ny = 180
 
-wedge = np.fromfunction(lambda i, j: np.abs(
-    i - Nx/4) + np.abs(j) < Ny/2, (Nx, Ny))
+diameter = 60
 
-bottom_boundary = np.fromfunction(lambda i, j: j == 0, (Nx, Ny))
-top_boundary = np.fromfunction(lambda i, j: j == Ny-1, (Nx, Ny))
+center_x = Nx/4
+center_y = Ny/2
+assert diameter < Nx/4
+cylinder_obj = np.fromfunction(lambda i, j: (i-center_x)**2 + (j-center_y)**2 <= (diameter/2)**2 ,(Nx, Ny))
 
-full_obstacle = np.logical_or(np.logical_or(
-    wedge, bottom_boundary), top_boundary)
 
 u_in = 0.04
-Re = 220
-visc = u_in * Ny / (2*Re)
+
+Re = 10
+cross_section = diameter
+visc = u_in * Ny / (Re*cross_section)
 tau = 3*visc + 0.5
 
 
@@ -157,12 +156,13 @@ eps = 0.0001
 u0 = np.fromfunction(lambda i, j, k: u_in *
                      (1 + eps*np.sin(2*np.pi*j/(Ny-1)))*(k == 0), (Nx, Ny, 2))
 rho0 = np.full((Nx, Ny), 1)
-
+plt.imshow(cylinder_obj)
+plt.show()
 # %%
 filenames = []
-run(Nx, Ny, tau, full_obstacle, u0, rho0, 20000, Re, filenames, save=True)
+run(Nx, Ny, tau, cylinder_obj, u0, rho0, 20000, Re, filenames, save=True)
 # %%
-with imageio.get_writer('./re220_popr2.gif', mode='I', duration=40) as writer:
+with imageio.get_writer('./cylinder_re10.gif', mode='I', duration=40) as writer:
     for frame in filenames:
         image = imageio.imread(frame)
         writer.append_data(image)
