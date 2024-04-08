@@ -136,7 +136,7 @@ def run(Nx, Ny, tau, obstacle, u0, rho0, T_max, Re, fnames=[], save=False):
 Nx = 520
 Ny = 180
 
-diameter = 60
+diameter = 20
 
 center_x = Nx/4
 center_y = Ny/2
@@ -146,7 +146,7 @@ cylinder_obj = np.fromfunction(lambda i, j: (i-center_x)**2 + (j-center_y)**2 <=
 
 u_in = 0.04
 
-Re = 10
+Re = 120
 cross_section = diameter
 visc = u_in * Ny / (Re*cross_section)
 tau = 3*visc + 0.5
@@ -160,9 +160,9 @@ plt.imshow(cylinder_obj)
 plt.show()
 # %%
 filenames = []
-run(Nx, Ny, tau, cylinder_obj, u0, rho0, 20000, Re, filenames, save=True)
+run(Nx, Ny, tau, cylinder_obj, u0, rho0, 100000, Re, filenames, save=True)
 # %%
-with imageio.get_writer('./cylinder_re10.gif', mode='I', duration=40) as writer:
+with imageio.get_writer(f'./cylinder_small_re{Re}.gif', mode='I', duration=40) as writer:
     for frame in filenames:
         image = imageio.imread(frame)
         writer.append_data(image)
