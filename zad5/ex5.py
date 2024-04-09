@@ -22,11 +22,9 @@ def calc_neighbourhood_vals(world, L):
     return neighbour_val.reshape(L,L)
 
 def evolve_world(world,L, rule):
-    apply_rule = np.vectorize(lambda x: rule[x])
-    n_vals = calc_neighbourhood_vals(world, L)
-    new_world = apply_rule(n_vals)
-    return new_world
+    return rule[calc_neighbourhood_vals(world, L).astype(int)]
 
+# @jit(nopython=True)
 def calc_fitness(world, diag_good_val = 10, side_bad_val = -5, diag_bad_val = -7):
     side_bad = np.sum(np.logical_or((world == np.roll(world, 1, axis = 0)),(world == np.roll(world, 1, axis = 1))))
     diag_good = np.sum(np.logical_or((world == np.roll(world, (1,1), axis = (0,1))), (world == np.roll(world, (-1,1), axis = (0,1)))))
@@ -43,19 +41,19 @@ def reproduce_chromosomes(chromosomes, fitnesses, num_chromosomes, num_surviving
     for i in range(5):
         mum = chromos_sorted[0]
         dad = chromos_sorted[1]
-        child = mum[:len(mum)//2] + dad[len(dad)//2:]   
+        child = np.concatenate((mum[:len(mum)//2],dad[len(dad)//2:]))   
         chromos_sorted.append(child)
     
     for i in range(3):
         mum = chromos_sorted[0]
         dad = chromos_sorted[2]
-        child = mum[:len(mum)//2] + dad[len(dad)//2:]   
+        child = np.concatenate((mum[:len(mum)//2], dad[len(dad)//2:]))
         chromos_sorted.append(child)
     
     for i in range(2):
         mum = chromos_sorted[3]
         dad = chromos_sorted[4]
-        child = mum[:len(mum)//2] + dad[len(dad)//2:]
+        child = np.concatenate((mum[:len(mum)//2], dad[len(dad)//2:]))
         chromos_sorted.append(child)
 
     mutate_choice = np.random.randint(0,num_chromosomes,2)
@@ -74,7 +72,7 @@ num_chromosomes = 20
 
 chromosomes = []
 for i in range(num_chromosomes):
-    chromosomes.append(list(np.random.randint(0, 2, 2**9)))
+    chromosomes.append(np.random.randint(0, 2, 2**9))
 
 w0 = make_world(L)
 
@@ -106,7 +104,7 @@ for chromo in chromosomes:
             w = make_world(L)
             for t in range(T_evol):
                 w = evolve_world(w, L, chromo)
-            this_chromo_fit += calc_fitness(w)
+            this_chromo_fit += convolve_calc_fitness(w)
         chromos_fitnesses_last.append(this_chromo_fit)
     
 best_chromo = chromosomes[np.argmax(chromos_fitnesses_last)]
