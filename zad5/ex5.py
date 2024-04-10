@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numba import jit
 from tqdm import tqdm
-from scipy.signal import convolve2d
+# from scipy.signal import convolve2d
 
 d = 1
 s = -1
@@ -25,11 +25,18 @@ def evolve_world(world,L, rule):
     return rule[calc_neighbourhood_vals(world, L).astype(int)]
 
 # @jit(nopython=True)
-def calc_fitness(world, diag_good_val = 10, side_bad_val = -5, diag_bad_val = -7):
-    side_bad = np.sum(np.logical_or((world == np.roll(world, 1, axis = 0)),(world == np.roll(world, 1, axis = 1))))
-    diag_good = np.sum(np.logical_or((world == np.roll(world, (1,1), axis = (0,1))), (world == np.roll(world, (-1,1), axis = (0,1)))))
-    diag_bad = np.sum(np.logical_not(np.logical_and((world == np.roll(world, (1,1), axis = (0,1))), (world == np.roll(world, (-1,1), axis = (0,1))))))
-    fitness = max(diag_good_val*diag_good - side_bad_val*side_bad, 0)
+def calc_fitness(world, diag_good_val = 10, side_bad_val = -8, diag_bad_val = -12):
+    left_bad_sum = np.sum((world == np.roll(world, 1, axis = 0)))
+    top_bad_sum = np.sum((world == np.roll(world, 1, axis = 1)))
+    top_right_good = (world == np.roll(world, (-1,1), axis = (0,1)))
+    bottom_right_good = (world == np.roll(world, (1,1), axis = (0,1)))
+    top_right_bad = np.logical_not(top_right_good)
+    bottom_right_bad = np.logical_not(bottom_right_good)
+    side_bad_sum = left_bad_sum + top_bad_sum
+    diag_good_sum = np.sum(top_right_good) + np.sum(bottom_right_good)
+    diag_bad_sum = np.sum(top_right_bad) + np.sum(bottom_right_bad)
+    
+    fitness = diag_good_val*diag_good_sum + side_bad_val*side_bad_sum + diag_bad_sum*diag_bad_val
     return fitness
 
 def convolve_calc_fitness(world):
@@ -76,9 +83,9 @@ for i in range(num_chromosomes):
 
 w0 = make_world(L)
 
-T_evol = 100
-num_generations = 400
-worlds_reps = 5
+T_evol = 120
+num_generations = 500
+worlds_reps = 10
 #%%
 max_fitnesses = []
 avg_fitnesses = []
@@ -102,9 +109,9 @@ for chromo in chromosomes:
         this_chromo_fit = 0
         for wnum in range(worlds_reps):
             w = make_world(L)
-            for t in range(T_evol):
+            for t in range(500):
                 w = evolve_world(w, L, chromo)
-            this_chromo_fit += convolve_calc_fitness(w)
+            this_chromo_fit += calc_fitness(w)
         chromos_fitnesses_last.append(this_chromo_fit)
     
 best_chromo = chromosomes[np.argmax(chromos_fitnesses_last)]
@@ -117,7 +124,7 @@ plt.show()
 #%%
 filenames = []
 w = make_world(L)
-for i in range(100):
+for i in range(1000):
     w = evolve_world(w, L, best_chromo)
     plt.imshow(w, cmap = 'gray')
     plt.axis('off')
@@ -126,10 +133,13 @@ for i in range(100):
     plt.close()
 # %%
 import imageio
-with imageio.get_writer('best_chromo.gif', mode='I') as writer:
+with imageio.get_writer('new_evolution.gif', mode='I') as writer:
     for frame in filenames:
         image = imageio.imread(frame)
         writer.append_data(image)
 writer.close()
 
 # %%
+chromosomes = []
+for i in range(num_chromosomes):
+    chromosomes.append(np.load("./best_16k.npy"))
