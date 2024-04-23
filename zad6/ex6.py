@@ -101,25 +101,33 @@ def analytic(n,x):
 def an(n):
     return lambda x: analytic(n,x)/n
 
-def generate_histo(eigenvalues, N, func, numbins = 200, name = 'GOE'):
+def generate_histo_2(eigenvalues, N, func, numbins = 200, name = 'GOE'):
     n, bins, _ = plt.hist(eigenvalues, numbins, density = True)
     plt.xlabel("Eigenvalues")
     plt.ylabel("Density")
-    plt.plot(bins, list(map(func,bins)), label = 'analytic function')
+    plt.plot(bins, list(map(func,bins)), label = r'semicircle: $ \frac{\sqrt{2N - x^2}}{\pi N}$')
     plt.legend()
     plt.savefig(f"./extra_hist_evs_{N}_{name}.png")
+    print(f"./extra_hist_evs_{N}_{name}.png")
     plt.show()
 
 #%%
 evs_gue_extra_1 = generate_eigenvals(50000,1,GUE)
-generate_histo(evs_gue_extra_1,1, an(1))
+generate_histo_2(evs_gue_extra_1,1, an(1))
 #%%
 evs_gue_extra_5 = generate_eigenvals(50000,5,GUE)
-generate_histo(evs_gue_extra_5,5, an(5))
+generate_histo_2(evs_gue_extra_5,5, an(5))
 
 #%%
-evs_gue_extra_200 = generate_eigenvals(10000,200,GUE)
-hist_spacings(evs_gue_extra_200, lambda x:0, 'GUE_extra', 200)
+def semi_gue (x,N):
+    R = np.sqrt(2*N)
+    return 2*np.sqrt(R**2 - x**2)/(np.pi*R**2)
+#%%
+evs_gue_extra_200 = generate_eigenvals(1000,500,GUE)
+#%%
+def semi_func(N):
+    return lambda x:semi_gue(x,N)
+generate_histo_2(evs_gue_extra_200, 500, semi_func(500), name = 'GUE_semi')
 # %%
 if 0:
     ham = GOE(2)
