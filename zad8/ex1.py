@@ -10,7 +10,7 @@ transpile)
 from qiskit_aer import Aer
 
 
-import zad8.helpers as oq
+import helpers as oq
 #%%
 #task 1
 def oracle(n,winner_index):
@@ -27,8 +27,8 @@ creg = ClassicalRegister(3, name="class_bit")
 
 t1_circuit = QuantumCircuit(qreg,creg)
 
-t1_circuit.initialize(0, qreg[0])
-t1_circuit.initialize(1, qreg[1])
+t1_circuit.initialize(1, qreg[0])
+t1_circuit.initialize(0, qreg[1])
 t1_circuit.initialize(0, qreg[2])
 
 for i in range(n):
