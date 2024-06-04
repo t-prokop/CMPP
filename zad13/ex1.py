@@ -93,6 +93,7 @@ plt.show()
 # %%
 # EXTRA
 wextra = np.loadtxt('extra_wmatrix.txt')
+w_matrix = np.copy(wextra)/np.max(wextra)
 
 state_arr = np.full(NPPL, 0.5)
 state_arr[0] = 1
@@ -105,7 +106,7 @@ D = 5
 B = 10
 
 # %%
-T_max = 8000
+T_max = 2200
 
 newstate_arr = np.zeros(NPPL)
 wm_new = np.zeros((NPPL, NPPL))
@@ -116,3 +117,9 @@ for t in range(T_max):
     wm_new = evolve_weight(w_matrix, state_arr)
     state_arr = np.copy(newstate_arr)
     w_matrix = np.copy(wm_new)
+
+# %%
+draw(w_matrix, state_arr)
+plt.show()
+plt.plot(opposite_conn_str_list)
+plt.show()
