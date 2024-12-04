@@ -4,28 +4,6 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import matplotlib.cm as cm
 
-# init vals
-NPPL = 34
-edge_list = np.loadtxt("zachary_edge_list.txt")
-edge_list = edge_list.astype(int)
-
-w_matrix = np.zeros((NPPL, NPPL))
-
-for edge in edge_list:
-    w_matrix[edge[0], edge[1]] = 0.5
-    w_matrix[edge[1], edge[0]] = 0.5
-
-state_arr = np.full(NPPL, 0.5)
-state_arr[0] = 1
-state_arr[33] = 0
-
-assert (w_matrix == w_matrix.T).all()
-
-# evolution
-dt = 0.01
-D = 5
-B = 10
-
 
 def gen_graph(wm, sa):
     g = nx.Graph()
@@ -51,12 +29,12 @@ def f_sa(sa):
     return (np.abs(np.array(list(sa)*NPPL).reshape(NPPL, NPPL) - np.array(list(sa)*NPPL).reshape(NPPL, NPPL).T) - 0.25)**3
 
 
-def evolve_state(wm, sa):
+def evolve_state(wm, sa, onemaster_index, zeromaster_index):
     newstate = np.copy(sa)
     newstate += dt * D * (np.dot(wm, sa) - sa*np.sum(wm, axis=1))
     # newstate[i] = sa[i] + dt * (D * np.sum(wm[i] * (sa - sa[i])) - B * f(sa[i]))
-    newstate[0] = 1
-    newstate[33] = 0
+    newstate[onemaster_index] = 1
+    newstate[zeromaster_index] = 0
     return newstate
 
 
@@ -72,6 +50,28 @@ def opos_str(wm, sa):
     return res
 
 
+# %%
+# init vals
+NPPL = 34
+edge_list = np.loadtxt("zachary_edge_list.txt")
+edge_list = edge_list.astype(int)
+
+w_matrix = np.zeros((NPPL, NPPL))
+
+for edge in edge_list:
+    w_matrix[edge[0], edge[1]] = 0.5
+    w_matrix[edge[1], edge[0]] = 0.5
+
+state_arr = np.full(NPPL, 0.5)
+state_arr[0] = 1
+state_arr[33] = 0
+
+assert (w_matrix == w_matrix.T).all()
+
+# evolution
+dt = 0.01
+D = 5
+B = 10
 # %%
 T_max = 8000
 
@@ -121,5 +121,51 @@ for t in range(T_max):
 # %%
 draw(w_matrix, state_arr)
 plt.show()
+plt.plot(opposite_conn_str_list)
+plt.show()
+
+# %%
+# ZABAWA
+NPPL = 10000
+
+dt = 0.01
+D = 5
+B = 10
+
+state_arr = np.full(NPPL, 0.5)
+
+# WYBRAC NODE'Y Z NAJWIEKSZA LICZBA PLACZEN na masterow
+def gen_rand_w_matrix(NPPL, num_hubs = 2):
+    assert num_hubs < NPPL
+    G = nx.scale_free_graph(NPPL).to_undirected()
+    leading_degree = sorted(G.degree, key = lambda it:it[1])[-num_hubs:]
+    zeroind, oneind = leading_degree[0][0], leading_degree[1][0]
+    G.remove_edge(zeroind, oneind)
+    A = nx.to_numpy_array(G)
+    A = A/np.max(A)
+    return G,A, zeroind, oneind
+
+
+initgraph, wm, zmi, omi = gen_rand_w_matrix(NPPL)
+state_arr[zmi] = 0
+state_arr[omi] = 1
+
+# draw(wm, state_arr)
+# plt.show()
+# %%
+T_max = 2500
+
+newstate_arr = np.zeros(NPPL)
+wm_new = np.zeros((NPPL, NPPL))
+opposite_conn_str_list = []
+for t in range(T_max):
+    opposite_conn_str_list.append(opos_str(wm, state_arr))
+    newstate_arr = evolve_state(wm, state_arr, omi, zmi)
+    wm_new = evolve_weight(wm, state_arr)
+    state_arr = np.copy(newstate_arr)
+    wm = np.copy(wm_new)
+# %%
+# draw(wm, state_arr)
+# plt.show()
 plt.plot(opposite_conn_str_list)
 plt.show()
